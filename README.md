@@ -2,7 +2,9 @@
 
 install `nodejs` then run `npm run i`.
 
-to up the server run `node ./server.js`
+to up the server install `npm i -g nodemon` then run `nodemon ./server.js`
+
+go to `localhost:3000/posts/:id` replace `:id` with a number from 0 to 5000
 
 ## Explaination:
 

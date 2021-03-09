@@ -4,57 +4,60 @@ const app = express();
 const fs = require("fs");
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
-
-const setMetaTags = ({ title, description, img, url }) => {
-    const metas = `
-        <meta property="og:type" content="article">
-        <meta property="og:site_name" content="Citiesapps">
-        <meta property="og:title" content="${title}">
-        <meta property="og:description" content="${description}">
-        <meta property="og:image" content="${img}">
-        <meta property="og:url" content="${url}">
-    `;
-
-    return metas;
-};
+const {
+    isBot,
+    setMetaTags,
+    getDummyPosts,
+    pathIntoArray,
+} = require("./helpers");
 
 app.use((req, res, next) => {
     next();
 });
 
-app.use(express.static(`${__dirname}/client-side`));
-
-app.engine("html", require("ejs").renderFile);
-app.set("view engine", "html");
-app.set("views", __dirname);
-
-app.get("*", (req, res) => {
-    /**
-     * Reading the  HTML file as string to add meta tags inside of it.
-     *
-     */
+app.get("*", async (req, res) => {
     const clientSideHTMLStr = fs.readFileSync(
         "./client-side/index.html",
         "utf8"
     );
-    const DOM = new JSDOM(clientSideHTMLStr);
-    const document = DOM.window.document;
+    if (!isBot(req.headers["user-agent"])) {
+        res.send(clientSideHTMLStr);
+    } else {
+        /**
+         * Reading the  HTML file as string to add meta tags inside of it.
+         */
+        const DOM = new JSDOM(clientSideHTMLStr);
+        const document = DOM.window.document;
+        const pathArr = pathIntoArray(req.url);
+        if (+pathArr[1]) {
+            const { data } = await getDummyPosts(pathArr[1]);
+            document.head.innerHTML =
+                document.head.innerHTML +
+                setMetaTags({
+                    title: data.title,
+                    description:
+                        "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Numquam, expedita!",
+                    img: data.url,
+                    url: req.url,
+                });
+        }
 
-    document.head.innerHTML =
-        document.head.innerHTML +
-        setMetaTags({
-            title: "test title",
-            description: "lorem.........",
-            img: "https://............",
-            url: "https://............",
-        });
+        /**
+         * Transform DOM  intro string contains the new updated HTML
+         */
+        const html = DOM.serialize();
 
-    const html = DOM.serialize();
-    console.log(html);
-    fs.writeFileSync("./index.html", html);
+        /**
+         * In case of a bot this rendered.html is created for testing purposes
+         */
+        fs.writeFileSync("./rendered.html", html);
+        /**
+         *===========================
+         */
 
-    res.send(html);
+        res.send(html);
+    }
 });
 app.listen(port, () => {
-    console.log("server is upp");
+    console.log(`🚀 [server]: started on port http://localhost:${port}`);
 });
