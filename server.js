@@ -17,25 +17,44 @@ const setMetaTags = ({ title, description, img, url }) => {
 
     return metas;
 };
-/**
- * Reading the  HTML file as string to add meta tags inside of it.
- *
- */
-const clientSideHTMLStr = fs.readFileSync("./client-side/index.html", "utf8");
-const DOM = new JSDOM(clientSideHTMLStr);
-const document = DOM.window.document;
 
-document.head.innerHTML =
-    document.head.innerHTML +
-    setMetaTags({
-        title: "test title",
-        description: "lorem.........",
-        img: "https://............",
-        url: "https://............",
-    });
+app.use((req, res, next) => {
+    next();
+});
 
-fs.writeFileSync("./index.html", DOM.serialize());
+app.use(express.static(`${__dirname}/client-side`));
 
+app.engine("html", require("ejs").renderFile);
+app.set("view engine", "html");
+app.set("views", __dirname);
+
+app.get("*", (req, res) => {
+    /**
+     * Reading the  HTML file as string to add meta tags inside of it.
+     *
+     */
+    const clientSideHTMLStr = fs.readFileSync(
+        "./client-side/index.html",
+        "utf8"
+    );
+    const DOM = new JSDOM(clientSideHTMLStr);
+    const document = DOM.window.document;
+
+    document.head.innerHTML =
+        document.head.innerHTML +
+        setMetaTags({
+            title: "test title",
+            description: "lorem.........",
+            img: "https://............",
+            url: "https://............",
+        });
+
+    const html = DOM.serialize();
+    console.log(html);
+    fs.writeFileSync("./index.html", html);
+
+    res.send(html);
+});
 app.listen(port, () => {
     console.log("server is upp");
 });
