@@ -16,6 +16,9 @@ app.use((req, res, next) => {
 });
 
 app.get("*", async (req, res) => {
+    /**
+     * Reading the  HTML file as string to add meta tags inside of it.
+     */
     const clientSideHTMLStr = fs.readFileSync(
         "./client-side/index.html",
         "utf8"
@@ -24,7 +27,7 @@ app.get("*", async (req, res) => {
         res.send(clientSideHTMLStr);
     } else {
         /**
-         * Reading the  HTML file as string to add meta tags inside of it.
+         * Transfer the string html file into Dom object to edit it.
          */
         const DOM = new JSDOM(clientSideHTMLStr);
         const document = DOM.window.document;
